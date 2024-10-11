@@ -1,0 +1,34 @@
+-- Insert sample categories
+INSERT OR IGNORE INTO categories (name) VALUES
+('Electronics'),
+('Books'),
+('Clothing');
+
+-- Insert sample products
+INSERT OR IGNORE INTO products (name, description, price, category_id, stock_quantity) VALUES
+('Smartphone', 'Latest model smartphone', 699.99, 1, 50),
+('Laptop', 'High-performance laptop', 999.99, 1, 30),
+('Novel', 'Bestselling novel', 19.99, 2, 100);
+
+-- Insert sample product images
+INSERT OR IGNORE INTO product_images (product_id, image_url) VALUES
+(1, 'smartphone1.jpg'),
+(1, 'smartphone2.jpg'),
+(2, 'laptop1.jpg'),
+(3, 'novel1.jpg');
+
+-- Insert sample transactions
+INSERT OR IGNORE INTO transactions (user_id, total_amount) VALUES
+(1, 719.98),
+(2, 1019.98);
+
+-- Insert sample transaction items
+INSERT OR IGNORE INTO transaction_items (transaction_id, product_id, quantity, price_at_purchase) VALUES
+(1, 1, 1, 699.99),
+(1, 3, 1, 19.99),
+(2, 2, 1, 999.99);
+
+-- Insert sample cart items
+INSERT OR IGNORE INTO cart_items (user_id, product_id, quantity) VALUES
+(1, 1, 1),
+(2, 3, 2);
