@@ -5,18 +5,16 @@ from flask_session import Session
 from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
 
-
+# App initialization
 app = Flask(__name__)
-
-# Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///database.db")
 
+# Caching headers
 @app.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
@@ -25,6 +23,7 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
+# Authentication Helper
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -68,101 +67,61 @@ if __name__ == '__main__':
 
 
 
-# Register route
-@app.route('/api/register', methods=['POST'])
+### User Management Routes ###
+@app.route('/register', methods=['POST'])
 def register():
-    # Get JSON data from request body
     data = request.get_json()
-
-    # Extract the email, password, and confirmation from the JSON
     email = data.get('email')
     password = data.get('password')
     confirmation = data.get('confirmation')
 
-    # Email validation (basic format check)
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return jsonify({'error': 'Invalid email format'}), 400
-
-    # Password validation (min 8 characters, one letter, one number, one special character)
     if len(password) < 8 or not re.search(r'[A-Za-z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        return jsonify({'error': 'Password must be at least 8 characters long, contain one letter, one number, and one special character'}), 400
-
-    # Password confirmation validation
+        return jsonify({'error': 'Password must meet complexity requirements'}), 400
     if password != confirmation:
         return jsonify({'error': 'Passwords do not match'}), 400
     
     try:
-        # Check if email already exists
         rows = db.execute("SELECT * FROM users WHERE email = ?", email)
-        if len(rows) > 0:
+        if rows:
             return jsonify({"error": "Email already in use"}), 400
 
-        # Hash the password before storing it
         hashed_password = generate_password_hash(password)
-
-        # Insert the new user into the database
         db.execute("INSERT INTO users (email, password) VALUES (?, ?)", email, hashed_password)
-
         return jsonify({'success': 'User registered successfully'}), 201
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
     
-# Login route
-@app.route('/api/login', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
-    """Log user in"""
-
-    # Forget any user_id
     session.clear()
-
-    # Get JSON data from request body
     data = request.get_json()
-
-    # Extract the email and password from the JSON
     email = data.get('email')
     password = data.get('password')
 
-    # Check if both fields are provided
     if not email or not password:
         return jsonify({'error': 'Missing email or password'}), 400
 
     try:
-        # Fetch the user from the database
         rows = db.execute("SELECT * FROM users WHERE email = ?", email)
-        if len(rows) != 1:
+        if len(rows) != 1 or not check_password_hash(rows[0]["password"], password):
             return jsonify({'error': 'Invalid email or password'}), 400
 
-        user = rows[0]
-
-        # Verify the password
-        if not check_password_hash(user['password'], password):
-            return jsonify({'error': 'Invalid email or password'}), 400
-        
-        # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
         session["email"] = rows[0]["email"]
-
-        # For simplicity, let's just return a success message
         return jsonify({'success': 'Login successful'}), 200
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Logout route
-@app.route('/api/logout', methods=['POST'])
+@app.route('/logout', methods=['POST'])
 def logout():
-    """Log user out"""
-
-    # Clear the session
     session.clear()
-
     return jsonify({'success': 'Logout successful'}), 200
 
-
-# Fetch all products
-@app.route('/api/products', methods=['GET'])
+### Product Management Routes ###
+@app.route('/products', methods=['GET'])
 def get_products():
     """Fetch products with pagination, filtering, and sorting"""
     category_id = request.args.get('category_id')
@@ -172,7 +131,6 @@ def get_products():
     order = request.args.get('order', 'asc')
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 10))
-    
     offset = (page - 1) * per_page
 
     # Base query
@@ -181,20 +139,20 @@ def get_products():
         WHERE price BETWEEN ? AND ? 
     """
 
-    # Optional category filter
-    if category_id:
-        query += "AND category_id = ? "
-        products = db.execute(query + f"ORDER BY {sort_by} {order} LIMIT ? OFFSET ?", min_price, max_price, category_id, per_page, offset)
-    else:
-        products = db.execute(query + f"ORDER BY {sort_by} {order} LIMIT ? OFFSET ?", min_price, max_price, per_page, offset)
-    
-    return jsonify(products), 200
+    try:
+        # Optional category filter
+        if category_id:
+            query += "AND category_id = ? "
+            products = db.execute(query + f"ORDER BY {sort_by} {order} LIMIT ? OFFSET ?", min_price, max_price, category_id, per_page, offset)
+        else:
+            products = db.execute(query + f"ORDER BY {sort_by} {order} LIMIT ? OFFSET ?", min_price, max_price, per_page, offset)
+        
+        return jsonify(products), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-
-# Fetch a specific product by ID
-@app.route('/api/product/<int:product_id>', methods=['GET'])
+@app.route('/product/<int:product_id>', methods=['GET'])
 def get_product(product_id):
-    """Fetch a single product by ID"""
     try:
         product = db.execute("SELECT * FROM products WHERE id = ?", product_id)
         if len(product) == 0:
@@ -203,10 +161,10 @@ def get_product(product_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/product/<int:product_id>/review', methods=['POST'])
+### Review Routes ###
+@app.route('/product/<int:product_id>/review', methods=['POST'])
 @login_required
 def add_review(product_id):
-    """Add a review for a product"""
     data = request.get_json()
     user_id = session.get('user_id')
     rating = data.get('rating')
@@ -237,8 +195,7 @@ def add_review(product_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Fetch all reviews for a product
-@app.route('/api/product/<int:product_id>/reviews', methods=['GET'])
+@app.route('/product/<int:product_id>/reviews', methods=['GET'])
 def get_reviews(product_id):
     """Fetch reviews for a product"""
     try:
@@ -247,8 +204,8 @@ def get_reviews(product_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Fetch all categories
-@app.route('/api/categories', methods=['GET'])
+### Categories Routes ###
+@app.route('/categories', methods=['GET'])
 def get_categories():
     """Fetch all product categories"""
     try:
@@ -258,7 +215,7 @@ def get_categories():
         return jsonify({"error": str(e)}), 500
 
 # Fetch products by category
-@app.route('/api/category/<category_name>', methods=['GET'])
+@app.route('/category/<category_name>', methods=['GET'])
 def get_products_by_category(category_name):
     """Fetch products within a specific category"""
     try:
@@ -272,17 +229,16 @@ def get_products_by_category(category_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Cart management: fetch (GET) or add item to cart (POST)
-@app.route('/api/cart', methods=['GET', 'POST'])
+### Cart Management Routes ###
+@app.route('/cart', methods=['GET', 'POST'])
 @login_required
 def manage_cart():
     """Fetch or update the user's cart"""
 
     user_id = session["user_id"]
-
+    
     if request.method == 'GET':
         try:
-            # Fetch cart items for the user
             cart_items = db.execute("SELECT * FROM cart_items WHERE user_id = ?", user_id)
             return jsonify(cart_items), 200
         except Exception as e:
@@ -297,7 +253,6 @@ def manage_cart():
             if not product_id or not quantity:
                 return jsonify({"error": "Product ID and quantity required"}), 400
 
-            # Add item to cart or update quantity if it already exists
             db.execute(
                 "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?) "
                 "ON CONFLICT(user_id, product_id) DO UPDATE SET quantity = quantity + ?",
@@ -307,134 +262,47 @@ def manage_cart():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-
-@app.route('/api/checkout', methods=['POST'])
+### Checkout ###
+@app.route('/checkout', methods=['POST'])
 @login_required
 def checkout():
     """Checkout and record the transaction"""
     data = request.get_json()
-
-    # Get user_id from session
     user_id = session.get("user_id")
-    
     cart_items = data.get('cart_items')
 
-    # Validate the data
     if not cart_items:
         return jsonify({"error": "Missing cart items"}), 400
 
     try:
-        total_amount = 0  # Initialize total amount
-
-        # Begin transaction: Insert into transactions table
-        transaction_id = db.execute(
-            "INSERT INTO transactions (user_id, total_amount) VALUES (?, 0)",
-            user_id
-        )
-        print(f"Transaction ID created: {transaction_id}")
+        total_amount = 0
+        transaction_id = db.execute("INSERT INTO transactions (user_id, total_amount) VALUES (?, 0)", user_id)
         
-        # Loop through each cart item
         for item in cart_items:
             product_id = item.get('product_id')
             quantity = item.get('quantity')
 
-            # Fetch product details (price and stock)
             product = db.execute("SELECT price, stock_quantity FROM products WHERE id = ?", product_id)
+            
             if len(product) == 0 or product[0]['stock_quantity'] < quantity:
                 return jsonify({"error": f"Not enough stock for product {product_id}"}), 400
 
-            # Calculate price for this item and add to total
             item_price = product[0]['price']
             total_amount += item_price * quantity
 
-            # Insert transaction item
             db.execute(
                 "INSERT INTO transaction_items (transaction_id, product_id, quantity, price_at_purchase) "
-                "VALUES (?, ?, ?, ?)",
-                transaction_id, product_id, quantity, item_price
+                "VALUES (?, ?, ?, ?)", transaction_id, product_id, quantity, item_price
             )
-            print(f"Inserted transaction item for product {product_id}, quantity {quantity}")
 
-            # Deduct stock
             db.execute(
                 "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?",
                 quantity, product_id
             )
-            print(f"Updated stock for product {product_id}, deducted {quantity}")
 
-        # Update total_amount in the transactions table
-        db.execute(
-            "UPDATE transactions SET total_amount = ? WHERE id = ?",
-            total_amount, transaction_id
-        )
-        print(f"Updated total amount for transaction {transaction_id}: {total_amount}")
-
-        # Clear cart after successful checkout
+        db.execute("UPDATE transactions SET total_amount = ? WHERE id = ?", total_amount, transaction_id)
         db.execute("DELETE FROM cart_items WHERE user_id = ?", user_id)
-        print(f"Cleared cart for user {user_id}")
 
         return jsonify({"message": "Transaction completed successfully!", "total_amount": total_amount}), 200
-
     except Exception as e:
-        print(f"Error during checkout: {e}")
         return jsonify({"error": str(e)}), 500
-
-
-# @app.route('/api/checkout', methods=['POST'])
-# @login_required
-# def checkout():
-#     """Checkout and record the transaction"""
-#     data = request.get_json()
-
-#     # Get user_id from session or request
-#     user_id = session.get("user_id")
-    
-#     cart_items = data.get('cart_items')
-#     total_amount = data.get('total_amount')
-
-#     # Validate the data
-#     if not cart_items or not total_amount:
-#         return jsonify({"error": "Missing cart items or total amount"}), 400
-
-#     try:
-#         # Start transaction: Insert into transactions table
-#         transaction_id = db.execute(
-#             "INSERT INTO transactions (user_id, total_amount) VALUES (?, ?)",
-#             user_id, total_amount
-#         )
-#         print(f"Transaction ID created: {transaction_id}")
-        
-#         # Loop through each cart item
-#         for item in cart_items:
-#             product_id = item.get('product_id')
-#             quantity = item.get('quantity')
-
-#             # Fetch product stock
-#             product = db.execute("SELECT stock_quantity FROM products WHERE id = ?", product_id)
-#             if len(product) == 0 or product[0]['stock_quantity'] < quantity:
-#                 return jsonify({"error": f"Not enough stock for product {product_id}"}), 400
-
-#             # Insert transaction item
-#             db.execute(
-#                 "INSERT INTO transaction_items (transaction_id, product_id, quantity, price_at_purchase) "
-#                 "VALUES (?, ?, ?, (SELECT price FROM products WHERE id = ?))",
-#                 transaction_id, product_id, quantity, product_id
-#             )
-#             print(f"Inserted transaction item for product {product_id}, quantity {quantity}")
-
-#             # Deduct stock
-#             db.execute(
-#                 "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?",
-#                 quantity, product_id
-#             )
-#             print(f"Updated stock for product {product_id}, deducted {quantity}")
-
-#         # Clear cart after successful checkout
-#         db.execute("DELETE FROM cart_items WHERE user_id = ?", user_id)
-#         print(f"Cleared cart for user {user_id}")
-
-#         return jsonify({"message": "Transaction completed successfully!"}), 200
-
-#     except Exception as e:
-#         print(f"Error during checkout: {e}")
-#         return jsonify({"error": str(e)}), 500
