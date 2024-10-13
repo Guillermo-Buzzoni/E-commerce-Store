@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <h3>Filters</h3>
+            <form method="get" action="{{ url_for('get_products') }}">
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select name="category_id" id="category" class="form-control">
+                        <option value="">All</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="min_price">Min Price</label>
+                    <input type="number" name="min_price" id="min_price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="max_price">Max Price</label>
+                    <input type="number" name="max_price" id="max_price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="sort_by">Sort By</label>
+                    <select name="sort_by" id="sort_by" class="form-control">
+                        <option value="price">Price</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="order">Order</label>
+                    <select name="order" id="order" class="form-control">
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Apply Filters</button>
+            </form>
+        </div>
+        <div class="col-md-9">
+            <h1>Products</h1>
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text">{{ product.price | format_currency }}</p>
+                            <a href="{{ url_for('get_product', product_id=product.id) }}" class="btn btn-primary">View
+                                Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page-1 }}&{{ request.query_string|safe }}"
+                            aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item"><span class="page-link">{{ page }}</span></li>
+                    {% if products|length == per_page %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page+1 }}&{{ request.query_string|safe }}"
+                            aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

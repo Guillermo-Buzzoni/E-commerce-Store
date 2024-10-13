@@ -1,0 +1,13 @@
+<!-- profile.html -->
+{% extends "layout.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Your Profile</h1>
+    <p>Email: {{ user.email }}</p>
+    <h2>Order History</h2>
+    <!-- Add order history here -->
+</div>
+{% endblock %}
