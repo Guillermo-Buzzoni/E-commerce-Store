@@ -8,20 +8,28 @@ db = SQL("sqlite:///database.db")
 def manage_cart():
     """Fetch or update the user's cart"""
     user_id = session["user_id"]
-
-    # if not user_id:
-    #     return redirect(url_for('login'))
     
     if request.method == 'GET':
         try:
             cart_items = db.execute("""
-                SELECT c.product_id, p.name as product_name, p.price, c.quantity
+                SELECT c.id, c.product_id, p.name as product_name, p.price, c.quantity, pi.image_url
                 FROM cart_items c
                 JOIN products p ON c.product_id = p.id
+                LEFT JOIN (
+                    SELECT product_id, MIN(image_url) as image_url 
+                    FROM product_images 
+                    GROUP BY product_id
+                ) pi ON p.id = pi.product_id
                 WHERE c.user_id = ?
             """, user_id)
             
             total = sum(item['price'] * item['quantity'] for item in cart_items)
+            
+            for item in cart_items:
+                if item['image_url']:
+                    item['image_url'] = url_for('static', filename=item['image_url'])
+                else:
+                    item['image_url'] = url_for('static', filename='images/placeholder.jpg')
             
             if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
                 return jsonify(cart_items), 200
@@ -73,14 +81,59 @@ def update_cart_item():
     new_quantity = request.form.get("quantity", type=int)
 
     if not item_id or new_quantity is None:
-        return jsonify({"error": "Missing item_id or quantity"}), 400
+        # error = "Missing item_id or quantity"
+        error = f"item id is: {item_id}; quantity is: {new_quantity}."
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 400
+        else:
+            return render_template('error.html', error=error), 400
 
     try:
         db.execute("UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?", 
                    new_quantity, item_id, user_id)
-        return redirect(url_for('manage_cart'))
+        success_message = "Item quantity updated"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"message": success_message}), 200
+        else:
+            return redirect(url_for('manage_cart'))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        error = str(e)
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 500
+        else:
+            return render_template('error.html', error=error), 500
+
+@login_required
+def add_to_cart():
+    """Add an item to the cart"""
+    user_id = session["user_id"]
+    product_id = request.form.get("product_id")
+    quantity = request.form.get("quantity", type=int)
+
+    if not product_id or quantity is None:
+        error = "Missing product_id or quantity"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 400
+        else:
+            return render_template('error.html', error=error), 400
+
+    try:
+        db.execute(
+            "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?) "
+            "ON CONFLICT(user_id, product_id) DO UPDATE SET quantity = quantity + ?",
+            user_id, product_id, quantity, quantity
+        )
+        success_message = "Item added to cart"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"message": success_message}), 201
+        else:
+            return redirect(url_for('manage_cart'))
+    except Exception as e:
+        error = str(e)
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 500
+        else:
+            return render_template('error.html', error=error), 500
 
 @login_required
 def remove_from_cart():
@@ -89,13 +142,25 @@ def remove_from_cart():
     item_id = request.form.get("item_id")
 
     if not item_id:
-        return jsonify({"error": "Missing item_id"}), 400
+        error = "Missing item_id"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 400
+        else:
+            return render_template('error.html', error=error), 400
 
     try:
         db.execute("DELETE FROM cart_items WHERE id = ? AND user_id = ?", item_id, user_id)
-        return redirect(url_for('manage_cart'))
+        success_message = "Item removed from cart"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"message": success_message}), 200
+        else:
+            return redirect(url_for('manage_cart'))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        error = str(e)
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 500
+        else:
+            return render_template('error.html', error=error), 500
 
 @login_required
 def checkout():

@@ -18,10 +18,11 @@ VALUES
 INSERT OR
 IGNORE INTO product_images (product_id, image_url)
 VALUES
-    (1, 'smartphone1.jpg'),
-    (1, 'smartphone2.jpg'),
-    (2, 'laptop1.jpg'),
-    (3, 'novel1.jpg');
+    (1, 'fairphone5_img1.webp'),
+    (1, 'fairphone5_img2.webp'),
+    (2, 'laptop_img1.webp'),
+    (2, 'laptop_img2.webp'),
+    (3, 'novel_img1.webp');
 
 -- Insert sample transactions
 INSERT OR

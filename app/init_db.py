@@ -1,17 +1,3 @@
-# import sqlite3
-
-# def init_db():
-#     with sqlite3.connect('database.db') as conn:
-#         with open('setup.sql', 'r') as f:
-#             conn.executescript(f.read())
-#         with open('generateSampleData.sql', 'r') as f:
-#             conn.executescript(f.read())
-
-#     print("Database initialized!")
-
-# if __name__ == "__main__":
-#     init_db()
-
 from cs50 import SQL
 from werkzeug.security import generate_password_hash
 import os
