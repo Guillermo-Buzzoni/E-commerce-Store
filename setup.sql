@@ -28,6 +28,7 @@ IF NOT EXISTS products
 (10, 2) NOT NULL,
     category_id INTEGER,
     stock_quantity INTEGER DEFAULT 0,
+    is_deal BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY
 (category_id) REFERENCES categories

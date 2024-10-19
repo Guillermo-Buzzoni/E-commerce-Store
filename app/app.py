@@ -1,4 +1,5 @@
-from flask import Flask, render_template, session
+from cs50 import SQL
+from flask import Flask, render_template
 from flask_session import Session
 from helpers import format_currency
 
@@ -6,6 +7,8 @@ from cart_routes import manage_cart, checkout, add_to_cart, remove_from_cart, up
 from product_routes import get_products, get_product, get_categories, get_products_by_category
 from review_routes import add_review, get_reviews
 from user_routes import login, logout, profile, register
+
+db = SQL("sqlite:///database.db")
 
 # App initialization
 app = Flask(__name__)
@@ -50,7 +53,11 @@ app.add_url_rule('/product/<int:product_id>/reviews', view_func=get_reviews, met
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    featured_products = get_products(limit=4, random=True)
+    categories = db.execute("SELECT * FROM categories")
+    deals = get_products(limit=3, is_deal=True)
+
+    return render_template('index.html', featured_products=featured_products, categories=categories, deals=deals)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -4,66 +4,89 @@ from math import ceil
 
 db = SQL("sqlite:///database.db")
 
-def get_products():
-    """Fetch products with pagination, filtering, and sorting"""
-    category_id = request.args.get('category_id')
-    min_price = request.args.get('min_price', type=float, default=0)
-    max_price = request.args.get('max_price', type=float, default=999999999)
-    sort_by = request.args.get('sort_by', 'name')
-    order = request.args.get('order', 'asc')
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 10))
-
-    if sort_by not in ['name', 'price']:
-        sort_by = 'name'
-    if order not in ['asc', 'desc']:
-        order = 'asc'
+def get_products(category_id=None, min_price=None, max_price=None, sort_by=None, order=None, page=None, per_page=None, limit=None, is_deal=None, random=None):
+    # If specific arguments are passed, use them. Otherwise, fall back to request.args.
+    category_id = category_id if category_id is not None else request.args.get('category_id')
+    min_price = min_price if min_price is not None else request.args.get('min_price', type=float, default=0)
+    max_price = max_price if max_price is not None else request.args.get('max_price', type=float, default=float(1e9))
+    sort_by = sort_by if sort_by is not None else request.args.get('sort_by', 'name')
+    order = order if order is not None else request.args.get('order', 'asc')
+    page = page if page is not None else int(request.args.get('page', 1))
+    per_page = per_page if per_page is not None else request.args.get('per_page', type=int, default=12)
     
-    offset = (page - 1) * per_page
+    # Prioritize function arguments for limit, is_deal, and random
+    limit = limit if limit is not None else request.args.get('limit', type=int)
+    is_deal = is_deal if is_deal is not None else request.args.get('is_deal', type=bool)
+    random = random if random is not None else request.args.get('random', type=bool)
 
-    base_query = """
-        SELECT p.*, pi.image_url 
+    query = """
+        SELECT p.*, c.name as category_name 
         FROM products p
-        LEFT JOIN (
-            SELECT product_id, MIN(image_url) as image_url 
-            FROM product_images 
-            GROUP BY product_id
-        ) pi ON p.id = pi.product_id
-        WHERE p.price BETWEEN ? AND ? 
-    """
-
-    count_query = """
-        SELECT COUNT(*) as total FROM products 
-        WHERE price BETWEEN ? AND ? 
+        JOIN categories c ON p.category_id = c.id
+        WHERE p.price BETWEEN ? AND ?
     """
     params = [min_price, max_price]
 
     if category_id:
-        base_query += "AND category_id = ? "
-        count_query += "AND category_id = ? "
+        query += " AND p.category_id = ?"
         params.append(category_id)
 
-    base_query += f"ORDER BY {sort_by} {order} LIMIT ? OFFSET ?"
-    params.extend([per_page, offset])
+    if is_deal:
+        query += " AND p.is_deal = 1"
 
+    if random:
+        query += " ORDER BY RANDOM()"
+    else:
+        query += f" ORDER BY p.{sort_by} {order}"
+
+    if limit:
+        query += " LIMIT ?"
+        params.append(limit)
+    else:
+        query += " LIMIT ? OFFSET ?"
+        params.extend([per_page, (page - 1) * per_page])
+
+    products = db.execute(query, *params)
+
+    for product in products:
+        images = db.execute("SELECT image_url FROM product_images WHERE product_id = ?", product['id'])
+        product['images'] = [url_for('static', filename=img['image_url']) for img in images] if images else [url_for('static', filename='placeholder_img1.webp')]
+
+    if request.endpoint == 'index':
+        return products
+    
+    categories = db.execute("SELECT * FROM categories")
+    
+    count_query = """
+        SELECT COUNT(*) as total
+        FROM products p
+        WHERE p.price BETWEEN ? AND ?
+    """
+    count_params = [min_price, max_price]
+
+    if category_id:
+        count_query += " AND p.category_id = ?"
+        count_params.append(category_id)
+
+    if is_deal:
+        count_query += " AND p.is_deal = 1"
+
+    total_count = db.execute(count_query, *count_params)[0]['total']
+    total_pages = ceil(total_count / per_page)
+
+    # Preserve the query params for pagination
+    query_params = request.args.copy()
+    query_params.pop('page', None)
+    
     try:
-        products = db.execute(base_query, *params)
-        total_count = db.execute(count_query, *params[:-2])[0]['total']
-        
-        total_pages = ceil(total_count / per_page)
-        
-        categories = db.execute("SELECT * FROM categories")
-
-        for product in products:
-            if product['image_url']:
-                product['image_url'] = url_for('static', filename=product['image_url'])
-
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
             return jsonify({
                 'products': products,
+                'categories': categories,
                 'page': page,
                 'total_pages': total_pages,
-                'total_count': total_count
+                'total_count': total_count,
+                'per_page': per_page
             }), 200
         else:
             return render_template('products.html', 
@@ -71,7 +94,9 @@ def get_products():
                                    categories=categories,
                                    page=page,
                                    total_pages=total_pages,
+                                   per_page=per_page,
                                    total_count=total_count,
+                                   query_params=query_params,
                                    current_category=category_id,
                                    current_min_price=min_price,
                                    current_max_price=max_price,
@@ -95,7 +120,10 @@ def get_product(product_id):
             else:
                 return render_template('error.html', error="Product not found"), 404
         
-        product['images'] = [url_for('static', filename=img['image_url']) for img in product_images]
+        if product_images:
+            product['images'] = [url_for('static', filename=img['image_url']) for img in product_images]
+        else:
+            product['images'] = [url_for('static', filename='placeholder_img1.webp')]
 
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
             return jsonify(product), 200

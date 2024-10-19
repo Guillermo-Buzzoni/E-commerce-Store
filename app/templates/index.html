@@ -1,14 +1,180 @@
 {% extends "layout.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Welcome to Our Store{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <h1>Welcome to Our E-commerce Store</h1>
-            <!-- Add content for the home page -->
+<!-- Hero Section -->
+<section class="hero-section mb-5"
+    style="background-image: url('{{ url_for('static', filename='hero_image_banner.jpg') }}'); background-size: cover; background-position: center; height: 400px;">
+    <div class="container h-100">
+        <div class="row align-items-center h-100">
+            <div class="col-md-6">
+                <h1 class="display-4 fw-bold mb-3 text-white">Welcome to Our Store</h1>
+                <p class="lead mb-4 text-white">Discover amazing products at great prices!</p>
+                <a href="{{ url_for('get_products') }}" class="btn btn-light btn-lg">Shop Now</a>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="container mb-5">
+    <h2 class="section-title text-center mb-4">Featured Products</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        {% for product in featured_products %}
+        <div class="col">
+            <div class="card h-100 featured-product-card">
+                {% if product.is_deal %}
+                <div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 m-2 rounded">Special Deal
+                </div>
+                {% endif %}
+                <div id="carousel-{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in product.images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ image }}" class="d-block w-100 card-img-top" alt="{{ product.name }}"
+                                style="height: 200px; object-fit: cover;"
+                                onerror="this.onerror=null; this.src='{{ url_for('static', filename='placeholder_img1.webp') }}';">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if product.images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ product.id }}"
+                        data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ product.id }}"
+                        data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.price | format_currency }}</p>
+                    <a href="{{ url_for('get_product', product_id=product.id) }}" class="btn btn-primary">View
+                        Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- New Arrivals and Special Deals Section -->
+<section class="container mb-5">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <a href="{{ url_for('get_products', sort='newest') }}" class="text-decoration-none">
+                <div class="card big-card h-100">
+                    <img src="{{ url_for('static', filename='new_arrivals.jpg') }}" class="card-img" alt="New Arrivals"
+                        style="height: 300px; object-fit: cover;">
+                    <div class="card-img-overlay d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <h3 class="card-title text-white text-shadow fw-bold">New Arrivals</h3>
+                            <p class="card-text text-white text-shadow">Check out our latest products</p>
+                            <div class="text-white text-shadow small"
+                                style="position: absolute; bottom: 10px; right: 10px;">
+                                Image by <a href="https://www.vectorportal.com" class="text-white">Vectorportal.com</a>,
+                                <a class="text-white" href="https://creativecommons.org/licenses/by/4.0/">CC BY</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 mb-4">
+            <a href="{{ url_for('get_products', deals_only='true') }}" class="text-decoration-none">
+                <div class="card big-card h-100">
+                    <img src="{{ url_for('static', filename='special_deals.jpg') }}" class="card-img"
+                        alt="Special Deals" style="height: 300px; object-fit: cover;">
+                    <div class="card-img-overlay d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <h3 class="card-title text-white text-shadow fw-bold">Special Deals</h3>
+                            <p class="card-text text-white text-shadow">Don't miss out on our amazing offers</p>
+                            <div class="text-white text-shadow small"
+                                style="position: absolute; bottom: 10px; right: 10px;">
+                                Image by <a href="https://www.vectorportal.com" class="text-white">Vectorportal.com</a>,
+                                <a class="text-white" href="https://creativecommons.org/licenses/by/4.0/">CC BY</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Shop by Category Section -->
+<section class="bg-light py-5 mb-5">
+    <div class="container">
+        <h2 class="section-title text-center mb-4">Shop by Category</h2>
+        <div class="row row-cols-2 row-cols-md-4 g-4">
+            {% for category in categories %}
+            <div class="col">
+                <a href="{{ url_for('get_products', category_id=category.id) }}" class="text-decoration-none">
+                    <div class="card category-card"
+                        style="background-image: url('{{ url_for('static', filename='category_' + category.name.lower() + '.jpg') }}');">
+                        <div class="card-body text-center">
+                            <h5 class="card-title mb-0">{{ category.name }}</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Deals Section -->
+<section class="container mb-5">
+    <h2 class="section-title text-center mb-4">Featured Deals</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for deal in deals %}
+        <div class="col">
+            <div class="card h-100 featured-product-card">
+                <div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 m-2 rounded">Special Deal
+                </div>
+                <div id="carousel-deal-{{ deal.id }}" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in deal.images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ image }}" class="d-block w-100 card-img-top" alt="{{ deal.name }}"
+                                style="height: 200px; object-fit: cover;"
+                                onerror="this.onerror=null; this.src='{{ url_for('static', filename='placeholder_img1.webp') }}';">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if deal.images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-deal-{{ deal.id }}"
+                        data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-deal-{{ deal.id }}"
+                        data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ deal.name }}</h5>
+                    <p class="card-text">
+                        <span class="text-muted text-decoration-line-through">
+                            {{ (deal.price / (1 - (0.1 * (loop.index % 3 + 1)))) | format_currency }}
+                        </span>
+                        <span class="text-danger fw-bold">
+                            {{ deal.price | format_currency }}
+                        </span>
+                    </p>
+                    <a href="{{ url_for('get_product', product_id=deal.id) }}" class="btn btn-danger">View Deal</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

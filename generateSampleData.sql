@@ -1,28 +1,28 @@
--- Insert sample categories
-INSERT OR
-IGNORE INTO categories (name)
-VALUES
-    ('Electronics'),
-    ('Books'),
-    ('Clothing');
+-- -- Insert sample categories
+-- INSERT OR
+-- IGNORE INTO categories (name)
+-- VALUES
+--     ('Electronics'),
+--     ('Books'),
+--     ('Clothing');
 
--- Insert sample products
-INSERT OR
-IGNORE INTO products (name, description, price, category_id, stock_quantity)
-VALUES
-    ('Smartphone', 'Latest model smartphone', 699.99, 1, 50),
-    ('Laptop', 'High-performance laptop', 999.99, 1, 30),
-    ('Novel', 'Bestselling novel', 19.99, 2, 100);
+-- -- Insert sample products
+-- INSERT OR
+-- IGNORE INTO products (name, description, price, category_id, stock_quantity, is_deal)
+-- VALUES
+--     ('Smartphone', 'Latest model smartphone', 699.99, 1, 50, 1),
+--     ('Laptop', 'High-performance laptop', 999.99, 1, 30, 0),
+--     ('Novel', 'Bestselling novel', 19.99, 2, 100, 1);
 
 -- Insert sample product images
-INSERT OR
-IGNORE INTO product_images (product_id, image_url)
-VALUES
-    (1, 'fairphone5_img1.webp'),
-    (1, 'fairphone5_img2.webp'),
-    (2, 'laptop_img1.webp'),
-    (2, 'laptop_img2.webp'),
-    (3, 'novel_img1.webp');
+-- INSERT OR
+-- IGNORE INTO product_images (product_id, image_url)
+-- VALUES
+--     (1, 'fairphone5_img1.webp'),
+--     (1, 'fairphone5_img2.webp'),
+--     (2, 'laptop_img1.webp'),
+--     (2, 'laptop_img2.webp'),
+--     (31, 'novel_img1.webp');
 
 -- Insert sample transactions
 INSERT OR
