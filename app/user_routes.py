@@ -25,7 +25,7 @@ def register():
             return render_template('register.html', error=error), 400
         
     if len(password) < 8 or not re.search(r'[A-Za-z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        error = 'Password must meet complexity requirements'
+        error = 'Password must contain at least 8 characters, including a letter, a number, and a special character'
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
             return jsonify({'error': error}), 400
         else:
@@ -85,7 +85,7 @@ def login():
             if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
                 return jsonify({'error': error}), 400
             else:
-                return render_template('login.html', error=error), 400 # login.html has nowhere to show the error
+                return render_template('login.html', error=error), 400
 
         session["user_id"] = rows[0]["id"]
         session["email"] = rows[0]["email"]

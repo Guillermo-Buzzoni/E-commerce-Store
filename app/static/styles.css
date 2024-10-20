@@ -11,12 +11,10 @@ body {
 
 main {
     flex: 1;
-    /* Allows main content to grow and take available space */
 }
 
 footer {
     flex-shrink: 0;
-    /* Prevents footer from shrinking */
 }
 
 .card {

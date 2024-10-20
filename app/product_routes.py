@@ -17,8 +17,6 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     # Prioritize function arguments for limit, is_deal, and random
     limit = limit if limit is not None else request.args.get('limit', type=int)
     is_deal = is_deal if is_deal is not None else request.args.get('is_deal', type=bool)
-    # is_deal = is_deal if is_deal is not None else request.args.get('is_deal', 'false')
-    # is_deal = True if is_deal == 'true' else False
     random = random if random is not None else request.args.get('random', type=bool)
 
     query = """
