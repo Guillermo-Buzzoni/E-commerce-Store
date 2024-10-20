@@ -111,9 +111,46 @@ def logout():
 @login_required
 def profile():
     """Display user profile"""
-    user_id = session.get("user_id")
+    user_id = session.get('user_id')
+
+    if not user_id:
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'error': 'User not logged in'}), 401
+        else:
+            return redirect(url_for('login'))
+
     try:
         user = db.execute("SELECT * FROM users WHERE id = ?", user_id)[0]
-        return render_template('profile.html', user=user)
+
+        transactions = db.execute("""
+            SELECT 
+                t.id AS transaction_id, 
+                t.transaction_date, 
+                t.total_amount
+            FROM transactions t
+            WHERE t.user_id = ?
+            ORDER BY t.transaction_date DESC
+        """, user_id)
+
+        for transaction in transactions:
+            transaction_products = db.execute("""
+                SELECT 
+                    p.name AS product_name, 
+                    ti.quantity, 
+                    ti.price_at_purchase
+                FROM transaction_items ti
+                JOIN products p ON ti.product_id = p.id
+                WHERE ti.transaction_id = ?
+            """, transaction['transaction_id'])
+            transaction['products'] = transaction_products
+
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'user': user, 'transactions': transactions}), 200
+        else:
+            return render_template("profile.html", user=user, transactions=transactions)
     except Exception as e:
-        return render_template('error.html', error=str(e))
+        error = str(e)
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 500
+        else:
+            return render_template('error.html', error=error)

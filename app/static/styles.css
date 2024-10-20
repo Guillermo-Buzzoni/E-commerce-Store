@@ -1,3 +1,24 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    /* Allows main content to grow and take available space */
+}
+
+footer {
+    flex-shrink: 0;
+    /* Prevents footer from shrinking */
+}
+
 .card {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: 0.3s;

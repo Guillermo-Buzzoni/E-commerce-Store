@@ -3,49 +3,67 @@
 {% block title %}Products{% endblock %}
 
 {% block content %}
-
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
-            <h3>Filters</h3>
-            <form action="{{ url_for('get_products') }}" method="get">
-                <div class="mb-3">
-                    <label for="category" class="form-label">Category</label>
-                    <select class="form-select" id="category" name="category_id">
-                        <option value="">All</option>
-                        {% for category in categories %}
-                        <option value="{{ category.id }}" {% if category.id==current_category|int %}selected{% endif %}>
-                            {{ category.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="min_price" class="form-label">Min Price</label>
-                    <input type="number" class="form-control" id="min_price" name="min_price"
-                        value="{{ current_min_price }}">
-                </div>
-                <div class="mb-3">
-                    <label for="max_price" class="form-label">Max Price</label>
-                    <input type="number" class="form-control" id="max_price" name="max_price"
-                        value="{{ current_max_price }}">
-                </div>
-                <div class="mb-3">
-                    <label for="sort_by" class="form-label">Sort By</label>
-                    <select class="form-select" id="sort_by" name="sort_by">
-                        <option value="name" {% if current_sort=='name' %}selected{% endif %}>Name</option>
-                        <option value="price" {% if current_sort=='price' %}selected{% endif %}>Price</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="order" class="form-label">Order</label>
-                    <select class="form-select" id="order" name="order">
-                        <option value="asc" {% if current_order=='asc' %}selected{% endif %}>Ascending</option>
-                        <option value="desc" {% if current_order=='desc' %}selected{% endif %}>Descending</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-            </form>
+            <!-- Button to toggle filters on mobile -->
+            <button class="btn btn-secondary d-md-none mb-3" type="button" data-bs-toggle="collapse"
+                data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+                Toggle Filters
+            </button>
+
+            <!-- Filters section with collapse for mobile view -->
+            <div id="filtersCollapse" class="collapse d-md-block">
+                <h3>Filters</h3>
+                <form action="{{ url_for('get_products') }}" method="get">
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category_id">
+                            <option value="">All</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id==current_category|int %}selected{% endif
+                                %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="is_deal" class="form-label">Deals Only</label>
+                        <select class="form-select" id="is_deal" name="is_deal">
+                            <option value="" {% if not is_deal %}selected{% endif %}>No</option>
+                            <option value="true" {% if is_deal %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="min_price" class="form-label">Min Price</label>
+                        <input type="number" class="form-control" id="min_price" name="min_price"
+                            value="{{ current_min_price }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="max_price" class="form-label">Max Price</label>
+                        <input type="number" class="form-control" id="max_price" name="max_price"
+                            value="{{ current_max_price }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sort_by" class="form-label">Sort By</label>
+                        <select class="form-select" id="sort_by" name="sort_by">
+                            <option value="name" {% if current_sort=='name' %}selected{% endif %}>Name</option>
+                            <option value="price" {% if current_sort=='price' %}selected{% endif %}>Price</option>
+                            <option value="date" {% if current_sort=='created_at' %}selected{% endif %}>Publication Date
+                            </option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="order" class="form-label">Order</label>
+                        <select class="form-select" id="order" name="order">
+                            <option value="asc" {% if current_order=='asc' %}selected{% endif %}>Ascending</option>
+                            <option value="desc" {% if current_order=='desc' %}selected{% endif %}>Descending</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </form>
+            </div>
         </div>
         <div class="col-md-9">
             <h1 class="mb-4">Products</h1>
@@ -53,7 +71,7 @@
                 {% for product in products %}
                 <div class="col">
                     <div class="card h-100">
-                        <div id="carousel-{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
+                        <div id="carousel-{{ product.id }}" class="carousel slide">
                             <div class="carousel-inner">
                                 {% for image in product.images %}
                                 <div class="carousel-item {% if loop.first %}active{% endif %}">
@@ -112,17 +130,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var carousels = document.querySelectorAll('.carousel');
-        carousels.forEach(function (carousel) {
-            new bootstrap.Carousel(carousel, {
-                interval: false
-            });
-        });
-    });
-</script>
 {% endblock %}

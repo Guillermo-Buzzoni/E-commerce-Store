@@ -17,6 +17,8 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     # Prioritize function arguments for limit, is_deal, and random
     limit = limit if limit is not None else request.args.get('limit', type=int)
     is_deal = is_deal if is_deal is not None else request.args.get('is_deal', type=bool)
+    # is_deal = is_deal if is_deal is not None else request.args.get('is_deal', 'false')
+    # is_deal = True if is_deal == 'true' else False
     random = random if random is not None else request.args.get('random', type=bool)
 
     query = """
@@ -37,6 +39,10 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     if random:
         query += " ORDER BY RANDOM()"
     else:
+        # if sort_by == 'newest':
+        #     query += " ORDER BY p.created_at DESC"
+        # else:
+        #     query += f" ORDER BY p.{sort_by} {order}"
         query += f" ORDER BY p.{sort_by} {order}"
 
     if limit:
@@ -101,7 +107,8 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
                                    current_min_price=min_price,
                                    current_max_price=max_price,
                                    current_sort=sort_by,
-                                   current_order=order)
+                                   current_order=order,
+                                   is_deal=is_deal)
     except Exception as e:
         error_message = str(e)
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
