@@ -57,15 +57,24 @@ def add_review(product_id):
 
 def get_reviews(product_id):
     """Fetch reviews for a product"""
+    # try:
+    #     reviews = db.execute("SELECT * FROM reviews WHERE product_id = ?", product_id)
+    #     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+    #         return jsonify(reviews), 200
+    #     else:
+    #         return render_template('reviews.html', reviews=reviews), 200
+    # except Exception as e:
+    #     error = str(e)
+    #     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+    #         return jsonify({"error": error}), 500
+    #     else:
+    #         return render_template('error.html', error=error), 500
     try:
         reviews = db.execute("SELECT * FROM reviews WHERE product_id = ?", product_id)
-        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify(reviews), 200
-        else:
-            return render_template('reviews.html', reviews=reviews), 200
+        return reviews
     except Exception as e:
-        error = str(e)
-        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify({"error": error}), 500
-        else:
-            return render_template('error.html', error=error), 500
+        raise Exception(f"Error fetching reviews: {str(e)}")
+        
+def get_average_rating(product_id):
+    result = db.execute("SELECT AVG(rating) as avg_rating FROM reviews WHERE product_id = ?", product_id)
+    return result[0]['avg_rating'] if result[0]['avg_rating'] else None

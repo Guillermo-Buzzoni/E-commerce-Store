@@ -2,6 +2,8 @@ from flask import jsonify, render_template, request, url_for
 from cs50 import SQL
 from math import ceil
 
+from review_routes import get_reviews, get_average_rating
+
 db = SQL("sqlite:///database.db")
 
 def get_products(category_id=None, min_price=None, max_price=None, sort_by=None, order=None, page=None, per_page=None, limit=None, is_deal=None, random=None):
@@ -130,10 +132,14 @@ def get_product(product_id):
         else:
             product['images'] = [url_for('static', filename='placeholder_img1.webp')]
 
+        reviews = get_reviews(product_id)
+
+        average_rating = get_average_rating(product_id)
+
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify(product), 200
+            return jsonify({'product': product, 'reviews': reviews}), 200
         else:
-            return render_template('product.html', product=product)
+            return render_template('product.html', product=product, reviews=reviews, average_rating=average_rating)
     except Exception as e:
         error_message = str(e)
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
