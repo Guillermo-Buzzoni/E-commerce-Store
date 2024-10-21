@@ -2,4 +2,5 @@ __pycache__/
 *.pyc
 .vscode/
 venv/
+new_venv/
 database.db
