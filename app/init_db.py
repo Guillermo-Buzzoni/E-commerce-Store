@@ -44,7 +44,6 @@ def execute_sql_file(db, filename):
 def generate_users(db, num_users):
     for i in range(num_users):
         email = f"user{i+1}@example.com"
-        # password = generate_password_hash(f"password{i+1}")
         password = generate_password_hash(f"Password{i+1}!")
         db.execute("INSERT INTO users (email, password) VALUES (?, ?)", email, password)
     print(f"Generated {num_users} users")

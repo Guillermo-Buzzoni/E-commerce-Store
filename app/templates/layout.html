@@ -14,27 +14,21 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container">
-                <!-- Store name, only visible on medium and larger screens -->
                 <a class="navbar-brand d-none d-lg-block" href="{{ url_for('index') }}">E-commerce Store</a>
 
-                <!-- Mobile menu toggle button -->
                 <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <!-- Search form, visible on all screen sizes -->
                 <form action="{{ url_for('get_products') }}" method="get" class="d-flex flex-grow-1">
                     <input class="form-control me-2" type="search" name="search" placeholder="Search products"
                         aria-label="Search">
-                    <!-- Hide the search button on smaller screens -->
                     <button class="btn btn-outline-success d-none d-lg-inline" type="submit">Search</button>
                 </form>
 
-                <!-- Collapsible menu items -->
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
-                        <!-- Home button, visible only inside mobile menu -->
                         <li class="nav-item d-lg-none">
                             <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                         </li>

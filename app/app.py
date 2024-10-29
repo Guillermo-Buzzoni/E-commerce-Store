@@ -8,6 +8,8 @@ from product_routes import get_products, get_product, get_categories, get_produc
 from review_routes import add_review, get_reviews
 from user_routes import login, logout, profile, register
 
+from init_db import generate_password_hash
+
 db = SQL("sqlite:///database.db")
 
 # App initialization
