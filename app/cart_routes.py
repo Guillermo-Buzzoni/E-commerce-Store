@@ -73,34 +73,6 @@ def manage_cart():
                 return render_template('error.html', error=error), 500
 
 
-@login_required
-def update_cart_item():
-    """Update the quantity of an item in the cart"""
-    user_id = session["user_id"]
-    item_id = request.form.get("item_id")
-    new_quantity = request.form.get("quantity", type=int)
-
-    if not item_id or new_quantity is None:
-        error = "Missing item_id or quantity"
-        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify({"error": error}), 400
-        else:
-            return render_template('error.html', error=error), 400
-
-    try:
-        db.execute("UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?", 
-                   new_quantity, item_id, user_id)
-        success_message = "Item quantity updated"
-        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify({"message": success_message}), 200
-        else:
-            return redirect(url_for('manage_cart'))
-    except Exception as e:
-        error = str(e)
-        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify({"error": error}), 500
-        else:
-            return render_template('error.html', error=error), 500
 
 @login_required
 def add_to_cart():
@@ -138,18 +110,47 @@ def add_to_cart():
 def remove_from_cart():
     """Remove an item from the cart"""
     user_id = session["user_id"]
-    item_id = request.form.get("item_id")
+    product_id = int(request.form.get("product_id"))
 
-    if not item_id:
-        error = "Missing item_id"
+    if not product_id:
+        error = "Missing product_id"
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
             return jsonify({"error": error}), 400
         else:
             return render_template('error.html', error=error), 400
 
     try:
-        db.execute("DELETE FROM cart_items WHERE id = ? AND user_id = ?", item_id, user_id)
+        db.execute("DELETE FROM cart_items WHERE product_id = ? AND user_id = ?", product_id, user_id)
         success_message = "Item removed from cart"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"message": success_message}), 200
+        else:
+            return redirect(url_for('manage_cart'))
+    except Exception as e:
+        error = str(e)
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 500
+        else:
+            return render_template('error.html', error=error), 500
+
+@login_required
+def update_cart_item():
+    """Update the quantity of an item in the cart"""
+    user_id = session["user_id"]
+    product_id = int(request.form.get("product_id"))
+    new_quantity = request.form.get("quantity", type=int)
+
+    if not product_id or new_quantity is None:
+        error = "Missing product_id or quantity"
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({"error": error}), 400
+        else:
+            return render_template('error.html', error=error), 400
+
+    try:
+        db.execute("UPDATE cart_items SET quantity = ? WHERE product_id = ? AND user_id = ?", 
+                   new_quantity, product_id, user_id)
+        success_message = "Item quantity updated"
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
             return jsonify({"message": success_message}), 200
         else:
@@ -196,16 +197,18 @@ def checkout():
                 return render_template('error.html', error=error), 400
 
             total_amount = 0
-            transaction_id = db.execute("INSERT INTO transactions (user_id, total_amount) VALUES (?, 0)", user_id)
-            
             for item in cart_items:
                 if item['stock_quantity'] < item['quantity']:
                     error = f"Not enough stock for product {item['product_name']}"
                     return render_template('error.html', error=error), 400
 
-                item_total = item['price'] * item['quantity']
-                total_amount += item_total
+                total_amount += item['price'] * item['quantity']
 
+            transaction_id = db.execute(
+                "INSERT INTO transactions (user_id, total_amount) VALUES (?, ?)", user_id, total_amount
+            )
+            
+            for item in cart_items:
                 db.execute(
                     "INSERT INTO transaction_items (transaction_id, product_id, quantity, price_at_purchase) "
                     "VALUES (?, ?, ?, ?)", transaction_id, item['product_id'], item['quantity'], item['price']
@@ -216,7 +219,6 @@ def checkout():
                     item['quantity'], item['product_id']
                 )
 
-            db.execute("UPDATE transactions SET total_amount = ? WHERE id = ?", total_amount, transaction_id)
             db.execute("DELETE FROM cart_items WHERE user_id = ?", user_id)
 
             success_message = "Transaction completed successfully!"

@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block title %}Success - E-commerce Store{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-center">
+        <h2 class="display-4 text-success">Success!</h2>
+        <p class="lead">{{ message }}</p>
+        {% if total_amount %}
+        <p>Total Amount: {{ total_amount | format_currency }}</p>
+        {% endif %}
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Return to Home</a>
+    </div>
+</div>
+{% endblock %}

@@ -20,6 +20,7 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     limit = limit if limit is not None else request.args.get('limit', type=int)
     is_deal = is_deal if is_deal is not None else request.args.get('is_deal', type=bool)
     random = random if random is not None else request.args.get('random', type=bool)
+    search_query = request.args.get('search')
 
     query = """
         SELECT p.*, c.name as category_name 
@@ -36,13 +37,13 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     if is_deal:
         query += " AND p.is_deal = 1"
 
+    if search_query:
+        query += " AND (p.name LIKE ? OR p.description LIKE ?)"
+        params.extend([f'%{search_query}%', f'%{search_query}%'])
+
     if random:
         query += " ORDER BY RANDOM()"
     else:
-        # if sort_by == 'newest':
-        #     query += " ORDER BY p.created_at DESC"
-        # else:
-        #     query += f" ORDER BY p.{sort_by} {order}"
         query += f" ORDER BY p.{sort_by} {order}"
 
     if limit:
@@ -77,6 +78,10 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     if is_deal:
         count_query += " AND p.is_deal = 1"
 
+    if search_query:
+        count_query += " AND (p.name LIKE ? OR p.description LIKE ?)"
+        count_params.extend([f'%{search_query}%', f'%{search_query}%'])
+
     total_count = db.execute(count_query, *count_params)[0]['total']
     total_pages = ceil(total_count / per_page)
 
@@ -108,7 +113,8 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
                                    current_max_price=max_price,
                                    current_sort=sort_by,
                                    current_order=order,
-                                   is_deal=is_deal)
+                                   is_deal=is_deal,
+                                   search_query=search_query)
     except Exception as e:
         error_message = str(e)
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
@@ -116,7 +122,7 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
         else:
             return render_template('error.html', error=error_message), 500
 
-def get_product(product_id):
+def get_product(product_id, error=None):
     try:
         product = db.execute("SELECT * FROM products WHERE id = ?", product_id)[0]
         product_images = db.execute("SELECT image_url FROM product_images WHERE product_id = ?", product_id)
@@ -137,9 +143,9 @@ def get_product(product_id):
         average_rating = get_average_rating(product_id)
 
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-            return jsonify({'product': product, 'reviews': reviews}), 200
+            return jsonify({'product': product, 'reviews': reviews, 'average_rating': average_rating}), 200
         else:
-            return render_template('product.html', product=product, reviews=reviews, average_rating=average_rating)
+            return render_template('product.html', product=product, reviews=reviews, average_rating=average_rating, error=error)
     except Exception as e:
         error_message = str(e)
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:

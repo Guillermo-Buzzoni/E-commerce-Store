@@ -1,5 +1,6 @@
-from flask import jsonify, request, session, render_template
 from cs50 import SQL
+from datetime import datetime
+from flask import jsonify, request, session, render_template
 from helpers import login_required
 
 db = SQL("sqlite:///database.db")
@@ -71,6 +72,10 @@ def get_reviews(product_id):
     #         return render_template('error.html', error=error), 500
     try:
         reviews = db.execute("SELECT * FROM reviews WHERE product_id = ?", product_id)
+        for review in reviews:
+            if isinstance(review['created_at'], str):
+                review['created_at'] = datetime.strptime(review['created_at'], "%Y-%m-%d %H:%M:%S") # review this. Does it make sense?
+        return reviews
         return reviews
     except Exception as e:
         raise Exception(f"Error fetching reviews: {str(e)}")

@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}{{ product.name }}{% endblock %}
 {% block content %}
-
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-6">
@@ -29,9 +28,13 @@
             </div>
         </div>
         <div class="col-md-6">
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
             <h1 class="mb-3">{{ product.name }}</h1>
             <p class="lead">{{ product.description }}</p>
-            <p class="h3 mb-4">Price: {{ product.price | format_currency }}</p>
+            <p class="h3 mb-4">{{ product.price | format_currency }}</p>
             {% if product.is_deal %}
             <p class="text-danger h5 mb-3">Special Deal!</p>
             {% endif %}
@@ -46,79 +49,51 @@
                 <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
             </form>
         </div>
-        <div class="mt-5">
-            <h3>Reviews</h3>
-            {% if average_rating %}
-            <p>Average Rating: {{ average_rating|round(1) }} / 5</p>
-            {% endif %}
-            {% if reviews %}
-            <ul class="list-group">
-                {% for review in reviews %}
-                <li class="list-group-item">
-                    <strong>Rating:</strong> {{ review.rating }} / 5<br>
-                    <strong>Review:</strong> {{ review.review_text }}<br>
-                    <small>Reviewed on {{ review.created_at }}</small>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>No reviews yet. Be the first to review this product!</p>
-            {% endif %}
-        </div>
-        {% if session['user_id'] %}
-        <div class="mt-5">
-            <h3>Submit a Review</h3>
-            <form action="{{ url_for('add_review', product_id=product.id) }}" method="POST" id="reviewForm">
-                <div class="mb-3">
-                    <label for="rating" class="form-label">Rating</label>
-                    <div class="rating">
-                        {% for i in range(1, 6) %}
-                        <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required />
-                        <label for="star{{ i }}" title="{{ i }} stars">&#9733;</label>
-                        {% endfor %}
+    </div>
+
+    <div class="mt-5"></div>
+    <button class="btn btn-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#reviewsSection"
+        aria-expanded="false" aria-controls="reviewsSection">
+        Reviews {% if average_rating %}<span class="badge bg-warning text-dark ms-2">{{ average_rating|round(1) }} /
+            5</span>{% endif %}
+    </button>
+    <div class="collapse mt-4" id="reviewsSection">
+        {% if reviews %}
+        <ul class="list-group mb-4">
+            {% for review in reviews %}
+            <li class="list-group-item d-flex flex-column align-items-start mb-2">
+                <div class="d-flex justify-content-between align-items-center w-100 mb-2">
+                    <div class="review-rating">
+                        <strong>Rating:</strong> {{ review.rating }} / 5
                     </div>
+                    <small class="text-muted">{{ review.created_at.strftime('%b %d, %Y') }}</small>
                 </div>
-                <div class="mb-3">
-                    <label for="review_text" class="form-label">Review</label>
-                    <textarea class="form-control" id="review_text" name="review_text" rows="3" required></textarea>
+                <div class="review-text">
+                    <p class="mb-1"><em>{{ review.review_text }}</em></p>
                 </div>
-                <button type="submit" class="btn btn-primary">Submit Review</button>
-            </form>
-        </div>
+            </li>
+            {% endfor %}
+        </ul>
         {% else %}
-        <div class="mt-5">
-            <p>Please <a href="{{ url_for('login') }}">log in</a> to submit a review.</p>
-        </div>
+        <p>No reviews yet. Be the first to review this product!</p>
         {% endif %}
     </div>
+    <h3>Submit a Review</h3>
+    <form action="{{ url_for('add_review', product_id=product.id) }}" method="POST" id="reviewForm">
+        <div class="mb-3">
+            <label for="rating" class="form-label">Rating</label>
+            <div class="rating">
+                {% for i in range(1, 6) %}
+                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required />
+                <label for="star{{ i }}" title="{{ i }} stars">&#9733;</label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="review_text" class="form-label">Review</label>
+            <textarea class="form-control" id="review_text" name="review_text" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Review</button>
+    </form>
 </div>
 {% endblock %}
-
-
-
-<script>
-    document.getElementById('reviewForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    alert(data.message);
-                    location.reload();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the review.');
-            });
-    });
-</script>
