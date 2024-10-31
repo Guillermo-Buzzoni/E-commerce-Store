@@ -10,7 +10,7 @@ def get_products(category_id=None, min_price=None, max_price=None, sort_by=None,
     # If specific arguments are passed, use them. Otherwise, fall back to request.args.
     category_id = category_id if category_id is not None else request.args.get('category_id')
     min_price = min_price if min_price is not None else request.args.get('min_price', type=float, default=0)
-    max_price = max_price if max_price is not None else request.args.get('max_price', type=float, default=float(1e9))
+    max_price = max_price if max_price is not None else request.args.get('max_price', type=float, default=1e9)
     sort_by = sort_by if sort_by is not None else request.args.get('sort_by', 'name')
     order = order if order is not None else request.args.get('order', 'asc')
     page = page if page is not None else int(request.args.get('page', 1))

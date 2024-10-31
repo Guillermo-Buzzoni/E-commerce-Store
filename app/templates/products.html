@@ -36,14 +36,16 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="min_price" class="form-label">Min Price</label>
+                        <label for="min_price" class="form-label">Min. Price</label>
                         <input type="number" class="form-control" id="min_price" name="min_price"
-                            value="{{ current_min_price }}">
+                            value="{{ request.args.get('min_price', '') }}" placeholder="Min. Price">
                     </div>
                     <div class="mb-3">
-                        <label for="max_price" class="form-label">Max Price</label>
+                        <label for="max_price" class="form-label">Max. Price</label>
                         <input type="number" class="form-control" id="max_price" name="max_price"
-                            value="{{ current_max_price }}">
+                            value="{{ request.args.get('max_price', '') }}" placeholder="Max. Price">
+
+
                     </div>
                     <div class="mb-3">
                         <label for="sort_by" class="form-label">Sort By</label>
@@ -71,11 +73,11 @@
                 {% for product in products %}
                 <div class="col">
                     <div class="card h-100">
-                        <div id="carousel-{{ product.id }}" class="carousel slide">
+                        <div id="carousel-{{ product.id }}" class="carousel slide product-carousel">
                             <div class="carousel-inner">
                                 {% for image in product.images %}
                                 <div class="carousel-item {% if loop.first %}active{% endif %}">
-                                    <img src="{{ image }}" class="d-block w-100 card-img-top" alt="{{ product.name }}"
+                                    <img src="{{ image }}" class="d-block w-100 product-image" alt="{{ product.name }}"
                                         onerror="this.onerror=null; this.src='{{ url_for('static', filename='placeholder_img1.webp') }}';">
                                 </div>
                                 {% endfor %}
@@ -103,31 +105,32 @@
                 </div>
                 {% endfor %}
             </div>
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page > 1 %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('get_products', page=page-1, **query_params) }}"
-                            aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
+        </div>
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('get_products', page=page-1, **query_params) }}"
+                        aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('get_products', page=p, **query_params) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                {% if page < total_pages %} <li class="page-item">
+                    <a class="page-link" href="{{ url_for('get_products', page=page+1, **query_params) }}"
+                        aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
                     </li>
                     {% endif %}
-                    {% for p in range(1, total_pages + 1) %}
-                    <li class="page-item {% if p == page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('get_products', page=p, **query_params) }}">{{ p }}</a>
-                    </li>
-                    {% endfor %}
-                    {% if page < total_pages %} <li class="page-item">
-                        <a class="page-link" href="{{ url_for('get_products', page=page+1, **query_params) }}"
-                            aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                        </li>
-                        {% endif %}
-                </ul>
-            </nav>
-        </div>
+            </ul>
+        </nav>
     </div>
+</div>
 </div>
 {% endblock %}

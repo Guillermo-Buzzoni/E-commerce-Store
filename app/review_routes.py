@@ -1,6 +1,6 @@
 from cs50 import SQL
 from datetime import datetime
-from flask import jsonify, request, session, render_template
+from flask import jsonify, request, session, render_template, redirect, url_for
 from helpers import login_required
 
 db = SQL("sqlite:///database.db")
@@ -48,6 +48,8 @@ def add_review(product_id):
             return jsonify({"message": success_message}), 201
         else:
             return render_template('success.html', message=success_message), 201
+            # return redirect(url_for('product.html', product_id=product_id))
+            # return render_template('product.html', product=product, reviews=reviews, average_rating=average_rating, error=error)
 
     except Exception as e:
         error = str(e)
@@ -58,18 +60,6 @@ def add_review(product_id):
 
 def get_reviews(product_id):
     """Fetch reviews for a product"""
-    # try:
-    #     reviews = db.execute("SELECT * FROM reviews WHERE product_id = ?", product_id)
-    #     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-    #         return jsonify(reviews), 200
-    #     else:
-    #         return render_template('reviews.html', reviews=reviews), 200
-    # except Exception as e:
-    #     error = str(e)
-    #     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-    #         return jsonify({"error": error}), 500
-    #     else:
-    #         return render_template('error.html', error=error), 500
     try:
         reviews = db.execute("SELECT * FROM reviews WHERE product_id = ?", product_id)
         for review in reviews:

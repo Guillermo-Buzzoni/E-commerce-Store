@@ -1,8 +1,10 @@
 # E-commerce Store
 
-This project is a web-based e-commerce application built with Python, Flask, and SQLite, styled with Bootstrap, and using Jinja2 templating for HTML rendering. The store simulates a complete e-commerce platform, allowing users to browse products, manage a cart, proceed to checkout, leave reviews, and view order history through an account profile. This project highlights the core functionality of an online store with simplicity in mind for database interaction, using the CS50 `SQL` library for its direct approach.
+#### Video demo: https://youtu.be/OkL456ybx9g
 
-### Video demo:
+#### Description
+
+This project is a web-based e-commerce application built with Python, Flask, and SQLite, styled with Bootstrap, and using Jinja2 templating for HTML rendering. The store simulates a complete e-commerce platform, allowing users to browse products, manage a cart, proceed to checkout, leave reviews, and view order history through an account profile. This project highlights the core functionality of an online store with simplicity in mind for database interaction, using the CS50 `SQL` library for its direct approach.
 
 ## Features
 

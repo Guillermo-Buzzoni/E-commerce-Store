@@ -49,11 +49,17 @@ def register():
 
         hashed_password = generate_password_hash(password)
         db.execute("INSERT INTO users (email, password) VALUES (?, ?)", email, hashed_password)
-        success_message = 'User registered successfully'
+        
+        # Log the user in after successful registration
+        user = db.execute("SELECT * FROM users WHERE email = ?", email)[0]
+        session["user_id"] = user["id"]
+        session["email"] = user["email"]
+        
+        success_message = 'User registered and logged in successfully'
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
             return jsonify({'success': success_message}), 201
         else:
-            return render_template('login.html', message=success_message), 201
+            return redirect(url_for('index'))
     except Exception as e:
         error = str(e)
         if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
